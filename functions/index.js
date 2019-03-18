@@ -105,13 +105,55 @@ exports.sendPics = functions.storage.object().onFinalize((data) => {
         action: 'read',
         expires: '03-09-2491'
         }).then(signedUrls => {
-            peoples.get().then(function(querySnapshot) {
-                querySnapshot.forEach(function(doc) {
-                    // This costs $0.30 per people
-                    // because 4 segments for that long link...
-                    // short.ly link ?
-                    //client.messages.create({from: '+17249876107 ', body: signedUrls[0], to: doc.data().number}).then(message => console.log(message.sid));
-                })
+          // The topic name can be optionally prefixed with "/topics/".
+          var topic = 'margauxhugo';
+
+          var message = {
+            data: {
+              title: "Nouvelle photo !",
+              body: "Wow wow wow !",
+              link: signedUrls[0]
+            },
+            webpush: {
+              fcm_options: {
+                link: signedUrls[0]
+              }
+            },
+            topic: topic
+          };
+
+          // Send a message to devices subscribed to the provided topic.
+          admin.messaging().send(message)
+            .then((response) => {
+              // Response is a message ID string.
+              console.log('Successfully sent message:', response);
             })
+            .catch((error) => {
+              console.log('Error sending message:', error);
+            });
+
+
         });
 });
+
+// Triggered by an Ajax request when a client accepts notifications
+exports.subscribeToTopic = functions.https.onRequest((request, response) => {
+  var registrationTokens = request.body.registrationToken
+  const topic = "margauxhugo"
+  
+  console.log("Will try to register token", registrationTokens)
+  // Subscribe the devices corresponding to the registration tokens to the
+  // topic.
+  admin.messaging().subscribeToTopic(registrationTokens, topic)
+    .then(function(subscribeResponse) {
+      // See the MessagingTopicManagementResponse reference documentation
+      // for the contents of response.
+      console.log('Successfully subscribed to topic:', subscribeResponse);
+      response.status(200);
+      response.send("OK !")
+    })
+    .catch(function(error) {
+      console.log('Error subscribing to topic:', error);
+    });
+  
+})

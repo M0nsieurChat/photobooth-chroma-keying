@@ -8,6 +8,10 @@
     ],
     "rewrites": [{
         "source": "/sendPics", "function": "sendPics"
-      }]  
+      },
+      {
+        "source": "/subscribeToTopic", "function": "subscribeToTopic"
+      }
+      ]  
   }
 }
